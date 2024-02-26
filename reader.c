@@ -7,30 +7,18 @@ int main(int argc , char *argv[])
     storage *info = makeheap();
     fillheap(info , csvfile);
 
-    //printf("%s", (info -> ptr)[0].name);
 //second step: the the operations
-
     FILE *opfile = openingfile(argc , argv , 2);
     readops(opfile , info);
   
+//close all my pointers
     free(info -> ptr);
     free(info);
     fclose(csvfile);
     fclose(opfile);
-
-    
- 
-
-
     return 0;
 }
-/*
-storage *parsecsv(int argc , char *argv[]){
-    FILE *csvfile = openingfile(argc , argv , 1);  
-    storage *info = makeheap();
-    fillheap(info , csvfile);
-}
-*/
+
 FILE *openingfile(int argc, char *argv[] , int i){
     FILE *file;
     if (argc == 3){
@@ -42,7 +30,7 @@ FILE *openingfile(int argc, char *argv[] , int i){
     }
     else{
         perror("Incorrect # of files given");
-        exit(1);
+        exit(0);
     }  
     return file;
 }
@@ -50,9 +38,9 @@ FILE *openingfile(int argc, char *argv[] , int i){
 //create a new empty storage container
 storage *makeheap(){
     storage *newheap = (storage *)malloc(sizeof(newheap));
-    newheap->cap = 4000;
+    newheap->cap =  4000; //change it back later
     newheap->size = 0;
-    newheap->ptr = (county *)malloc(newheap->cap * sizeof(county));
+    newheap->ptr = (county *)malloc(((newheap->cap) + 1) * sizeof(county));
     return newheap;
 }
 
@@ -64,21 +52,20 @@ void fillheap(storage *info , FILE *file){
     while(getline(&line , &size , file) > 0){
         realloccheck(info);
         county newcounty = parseline(line);
-        //printf("%s\n" , newcounty.name);
-
-        //if ((newcounty.state)[0] != '0'){
-            (info -> ptr)[info -> size] = newcounty;
-            (info -> size)++;
-        //}
-
-        //free(line);
+        if (newcounty.state[3] == 'Z'){
+            printf(" could not parse county at line %d\n" , info -> size);
+        }
+        else{
+        (info -> ptr)[info -> size] = newcounty;
+        (info -> size)++;
+        }
     }
     printf("%d records loaded\n" , info -> size);
 }
 
 void realloccheck(storage *info){
-    if ((info -> size) + 5 == info -> cap){
-        county *newarr = realloc(info -> ptr , (150 + info -> cap) * sizeof(county));
+    if ((info -> size) + 1 == info -> cap){
+        county *newarr = realloc(info -> ptr , (155 + (info -> cap)) * sizeof(county));
         if (newarr != NULL){
             info -> ptr = newarr;
             info -> cap += 150;
@@ -100,6 +87,7 @@ county parseline(char *line){
     while (token != NULL) {
         float value;
         int len;
+        int x = 1;
         switch (tokenIndex) {
             case 0: // County name
                 len = strlen(token);
@@ -118,60 +106,59 @@ county parseline(char *line){
                 */
                 break;
             case 5: // Education.Bachelor's Degree or Higher
-                sscanf(token, "\"%f\"", &value);
+                x = sscanf(token, "\"%f\"", &value);
                 cnt.edu[0] = value;
                 break;
             case 6: // Education.High School or Higher
-
-                sscanf(token, "\"%f\"", &value);
+                x = sscanf(token, "\"%f\"", &value);
                 cnt.edu[1] = value;
                 break;
             case 11: // Start of ethnicities
-                sscanf(token, "\"%f\"", &value);
+                x = sscanf(token, "\"%f\"", &value);
                 cnt.ethn[0] = value;
                 break;
             case 12:
-                sscanf(token, "\"%f\"", &value);
+                x = sscanf(token, "\"%f\"", &value);
                 cnt.ethn[1] = value;
                 break;
             case 13:
-                sscanf(token, "\"%f\"", &value);
+                x = sscanf(token, "\"%f\"", &value);
                 cnt.ethn[2] = value;
                 break;
             case 14:
-                sscanf(token, "\"%f\"", &value);
+                x = sscanf(token, "\"%f\"", &value);
                 cnt.ethn[3] = value;
                 break;
             case 15:
-                sscanf(token, "\"%f\"", &value);
+                x = sscanf(token, "\"%f\"", &value);
                 cnt.ethn[4] = value;
                 break;
             case 16:
-                sscanf(token, "\"%f\"", &value);
+                x = sscanf(token, "\"%f\"", &value);
                 cnt.ethn[5] = value;
                 break;
             case 17:
-                sscanf(token, "\"%f\"", &value);
+                x = sscanf(token, "\"%f\"", &value);
                 cnt.ethn[6] = value;
                 break;
             case 18:
-                sscanf(token, "\"%f\"", &value);
+                x = sscanf(token, "\"%f\"", &value);
                 cnt.ethn[7] = value;
                 break;
             case 25: // Income.Median Household Income
-                sscanf(token, "\"%d\"", &len);
+                x = sscanf(token, "\"%d\"", &len);
                 cnt.inc[0]= len;
                 break;
             case 26: // Income.Per Capita Income
-                sscanf(token, "\"%d\"", &len);
+                x = sscanf(token, "\"%d\"", &len);
                 cnt.inc[1]= len;
                 break;
             case 27: // Income.Persons Below Poverty Level
-                sscanf(token, "\"%f\"", &value);
+                x = sscanf(token, "\"%f\"", &value);
                 cnt.pov = value;
                 break;
             case 38:
-                sscanf(token, "\"%d\"", &len);
+                x = sscanf(token, "\"%d\"", &len);
                 cnt.pop = len;
                 break;
             default:
@@ -180,6 +167,15 @@ county parseline(char *line){
         }
         token = strtok(NULL, ","); // Get the next token
         tokenIndex++; // Move to the next field
+        if (x == 0){
+            cnt.state[3] = 'Z';
+            return cnt;
+        }
+    }
+    //printf("%d\n", tokenIndex);
+    if (tokenIndex != 52){
+        cnt.state[3] = 'Z';
+        return cnt;   
     }
 
     return cnt;
@@ -193,6 +189,7 @@ void readops(FILE *file , storage *data){
     char *line = NULL;
     size_t size = 0;
     char *acceptable[] = {"display" , "filter" , "population" , "percent"};
+    int j = 0;
     while(getline(&line , &size , file) > 0){
         char operation[100];
         int i = 0;
@@ -214,15 +211,18 @@ void readops(FILE *file , storage *data){
             filterme(data , line);
         }
         else if(strcmp(op , acceptable[2]) == 0){
-            break;
+            populationme(data , line);
         }
         else if(strcmp(op , acceptable[3]) == 0){
-            break;
+            percentme(data, line);
         }
+        else{
+            printf("must be a valid operation (display, filter , population, percent) %d\n" , j);
+        }
+        j++;
         
     }
-    free(line);
-    
+    free(line);   
 }
 
 
@@ -262,8 +262,7 @@ void filterme(storage *data , char *line){
         statename[2] = '\0';
         findstates(data , statename);
     }
-    
-    if (line[6] == ':'){
+    else if (line[6] == ':'){
         int cnt = 7;
         int i = 0;
         char buffer[100];
@@ -296,7 +295,12 @@ void filterme(storage *data , char *line){
         value = atof(nums);
         //printf("found gele\n");
         findgele(data , field , sign , value);
-    }    
+    }
+    else{
+        printf("command formated incorrectly, must be ':' or '-' \n");
+        return;
+    }
+
 
 }
 
@@ -314,6 +318,9 @@ void findstates(storage *data , char *statename){
     data -> cap = newheap -> cap;
     data -> size = newheap -> size;
     data -> ptr = newheap -> ptr;
+    
+    free(newheap);
+
 
     printf("filter: state == %s (%d entries)\n" , statename , data -> size);
 
@@ -333,16 +340,24 @@ void findgele(storage *data , char *field , int sign , float value){
     char nums[j + 1];
     buffer2[j] = '\0';
     strcpy(nums , buffer2);
+    //printf("hi\n\n");
+    //printf("%s\n\n" , nums);
     //printf("my nums: %s", nums);
     if (strcmp(nums , acceptable[0]) == 0){
+        //printf("hi\n\n");
         //printf("found edu");
         findgele_edu(data , field, sign , value);
     }
     else if (strcmp(nums , acceptable[1]) == 0){
+        //printf("hi\n\n");
         findgele_ethn(data , field, sign , value);   
     }
     else if (strcmp(nums , acceptable[2]) == 0){
         findgele_inc(data , field, sign , value);
+    }
+    else{
+        printf("field formatted incorrectly, must be Education, Ethnicities, Income\n");
+        return;
     }
 
 }
@@ -350,8 +365,6 @@ void findgele(storage *data , char *field , int sign , float value){
 
 void findgele_edu(storage *data , char *field , int sign , float value){
     int j = 0;
-    //printf("\n%c\n" , field[10]);
-    //printf("%d" , sign);
     if (field[10] == 'H'){
         j = 1;
     }
@@ -359,52 +372,22 @@ void findgele_edu(storage *data , char *field , int sign , float value){
         j = 0;
     }
     else{
-        perror("your mom :3"); //need to say something about this not being valid
+        perror("field formatted incorrectly, education"); //need to say something about this not being valid
+        return;
     }
     storage *newheap = makeheap();
     //displayme(data);
     for (int i = 0 ; i < (data -> size) ; i ++){
         county cur = (data -> ptr)[i];
         float perc = cur.edu[j];
-/*
-        printf("%s , %s\n" , cur.name , cur.state);
-        printf("    population: %d\n" , cur.pop);
-        printf("    education:\n");
-        printf("        High School: %f%%\n" , cur.edu[1]);
-        printf("        Bachelor's: %f%%\n" , cur.edu[0]);
-        printf("    Ethnicity percentages:\n");
-        printf("        American Indian or Alaskan Native: %f\n" , cur.ethn[0]);
-        printf("        Asian: %f%%\n" , cur.ethn[1]);
-        printf("        Black: %f%%\n" , cur.ethn[2]);
-        printf("        Hispanic: %f%%\n" , cur.ethn[3]);
-        printf("        Pacific Islander: %f%%\n" , cur.ethn[4]);
-        printf("        Two or more races: %f%%\n" , cur.ethn[5]);
-        printf("        White: %f%%\n" , cur.ethn[6]);
-        printf("        White, not hispanic or latino: %f%%\n" , cur.ethn[7]);
-        printf("    Income:\n");
-        printf("        Median Household: %d\n" , cur.inc[0]);
-        printf("        Per Capita: %d\n" , cur.inc[1]);
-        printf("        Below Poverty level: %f%%\n\n" , cur.pov);
-*/
-
-        
         if (sign){
             if (perc >= value){
-                realloccheck(newheap);
-                (newheap -> ptr)[newheap -> size] = (data -> ptr)[i];
-                (newheap -> size)++;
-                //addentry(newheap , data , i);
+                addentry(newheap , data , i);
             }
         }
         else{
             if (perc <= value){
-                printf("%f\n" , perc);
-                printf("number: %d\n", i);
-                realloccheck(newheap);
-                (newheap -> ptr)[newheap -> size] = (data -> ptr)[i];
-                (newheap -> size)++;
-                printf(" countystate %s\n" , (data -> ptr)[i].state);
-                //addentry(newheap , data , i);
+                addentry(newheap , data , i);
             }
         }
     }
@@ -412,15 +395,101 @@ void findgele_edu(storage *data , char *field , int sign , float value){
     data -> cap = newheap -> cap;
     data -> size = newheap -> size;
     data -> ptr = newheap -> ptr;
-    printf("filter: %s (%d entries)\n" , field , data -> size);
+    free(newheap);
+    char *signer = "le";
+    if (sign){
+        signer = "ge";
+    }
+    printf("filter: %s %s %f (%d entries)\n" , field , signer , value, data -> size);
 
 }
 
 void findgele_ethn(storage *data , char *field , int sign , float value){
+    int j = 0; //(s)
+    //printf("%s\n\n" , field);
+    if (strcmp("Ethnicities.Asian Alone" , field) == 0){
+        j = 1;
+    }
+    else if (strcmp("Ethnicities.Black Alone" , field) == 0){
+        j = 2;
+    }
+    else if(strcmp("Ethnicities.Hispanic or Latino" , field) == 0){
+        j = 3;
+    }
+    else if(strcmp("Ethnicities.Native Hawaiian and Other Pacific Islander Alone" , field) == 0){
+        j = 4;
+    }
+    else if(strcmp("Ethnicities.Two or More Races" , field) == 0){
+        j =5;
+    }
+    else if(strcmp("Ethnicities.White Alone" , field) == 0){
+        j=6;
+    }
+    else if(strcmp("Ethnicities.White Alone not Hispanic or Latino" , field) == 0){
+        j = 7;
+    }
+    else if(strcmp("Ethnicities.American Indian and Alaska Native Alone" , field) == 0){
+        j = 0;
+    }
+    else{
+        perror("field formatted incorrectly: ethnicities"); //need to say something about this not being valid
+        return;
+    }
+    storage *newheap = makeheap();
+    //displayme(data);
+    for (int i = 0 ; i < (data -> size) ; i ++){
+        county cur = (data -> ptr)[i];
+        float perc = cur.ethn[j];
+        if (sign){
+            if (perc >= value){
+                addentry(newheap , data , i);
+            }
+        }
+        else{
+            if (perc <= value){
+                addentry(newheap , data , i);
+            }
+        }
+    }
+    free(data -> ptr);
+    data -> cap = newheap -> cap;
+    data -> size = newheap -> size;
+    data -> ptr = newheap -> ptr;
+    free(newheap);
+    char *signer = "le";
+    if (sign){
+        signer = "ge";
+    }
+    printf("filter: %s %s %f (%d entries)\n" , field , signer , value, data -> size);
 
 }
 
 void findgele_inc(storage *data , char *field , int sign , float value){
+    storage *newheap = makeheap();
+    for (int i = 0 ; i < (data -> size) ; i ++){
+        county cur = (data -> ptr)[i];
+        float perc = cur.pov;
+        if (sign){
+            if (perc >= value){
+                addentry(newheap , data , i);
+            }
+        }
+        else{
+            if (perc <= value){
+                addentry(newheap , data , i);
+            }
+        }
+    }
+    free(data -> ptr);
+    data -> cap = newheap -> cap;
+    data -> size = newheap -> size;
+    data -> ptr = newheap -> ptr;
+    free(newheap);
+    char *signer = "le";
+    if (sign){
+        signer = "ge";
+    }
+    printf("filter: %s %s %f (%d entries)\n" , field , signer , value, data -> size);
 
 }
 
@@ -431,7 +500,211 @@ void addentry(storage *newheap , storage *data , int i ){
 }
 
 
+void populationme(storage *data , char *line){
 
+    int x;
+    float y;
+    if (line[10] == '-'){
+        
+        x= poptotal(data);
+        printf("2014 population: %d\n" , x);
+    }
+    else if (line[10] == ':'){
+        y = popfield(data , line);
+        if (y == -1){
+            return;
+        }
+        char *field = findfield(line);
+        if (field == NULL){
+            return;
+        }
+        printf("2014 %s population: %f\n", field, y);
+        free(field);
+    }
+    else{
+        printf("field formatted incorrectly, must be '-' or ':' after population\n");
+    }
+    
+}
+
+int poptotal(storage *data){
+    int total = 0;
+    for (size_t i = 0 ; i < data -> size ; i++){
+        county specific = (data -> ptr)[i];
+        int curpop = specific.pop;
+        total += curpop;
+        //printf("%d\n" , curpop);
+    }
+    return total;
+}
+
+char *findfield(char *line){
+    int i = 0;
+    int check = 0;
+    while (line[i] != '.'){
+        if (line[i] == '\0'){
+            check = 1;
+            break;
+        }
+        i++;
+    }
+    if (check){
+        return NULL;
+    }
+    i++;
+    int m = 0;
+    char buffer3[100];
+    while (line[i] != '.' && line[i] != '\0'&& line[i] != '\n' && i < 99){
+        buffer3[m] = line[i];
+        m++;
+        i++;
+    }
+    char *field = (char *)malloc((m + 1)*sizeof(char));
+    buffer3[m] = '\0';
+    strcpy(field , buffer3);
+    return field;
+}
+
+float popfield(storage *data , char *line){
+    char *acceptable[] = {"Education" , "Ethnicities" , "Income"};
+    int j = 0;
+    while (line[j] != ':'){
+        if (line[j] == '\0'){
+            perror("formating error");
+            return -1;
+        }
+        j++;
+    }
+    j++;
+
+    int i = 0;
+    char buffer2[100];
+    while (line[j] != '.' && line[j] != '\0'&& line[j] != '\n' && j < 99){
+        buffer2[i] = line[j];
+        j++;
+        i++;
+    }
+    char nums[i + 1];
+    buffer2[i] = '\0';
+    strcpy(nums , buffer2);
+    j++;
+    char *field = findfield(line); 
+    int x;
+    //printf("current nums: %s\n" , nums);
+    if (strcmp(nums , acceptable[0]) == 0){
+        //printf("hi\n\n");
+        //printf("found edu");
+        x= findpop_edu(data , field);
+    }
+    else if (strcmp(nums , acceptable[1]) == 0){
+        //printf("hi\n\n");
+         x = findpop_eth(data , field);   
+    }
+    else if (strcmp(nums , acceptable[2]) == 0){
+        x = findpop_pov(data , field);
+    }
+    else{
+        printf("incorrect format");
+        return -1;
+    }
+    free(field);
+    return x;
+}
+
+float findpop_edu(storage *data , char *field){
+    int j = 0;
+    if (field[0] == 'H'){
+        j = 1;
+    }
+    else if (field[0] == 'B'){
+        j = 0;
+    }
+    else{
+        perror("not a valid field (edu)"); //need to say something about this not being valid
+        return -1;
+    }
+
+    float pop_total = 0;
+    for (int i = 0 ; i < (data -> size) ; i ++){
+        county cur = (data -> ptr)[i];
+        float perc = cur.edu[j];
+        float pop = cur.pop * perc * 0.01;
+        pop_total += pop;
+    }
+    //printf("2014 %s population: %f\n", field, pop_total);
+    return pop_total;
+}
+
+float findpop_eth(storage *data , char *field){
+    //printf("%s\n" , field);
+    int j = 0; //(s)
+    //printf("%s\n\n" , field);
+    if (strcmp("Asian Alone" , field) == 0){
+        j = 1;
+    }
+    else if (strcmp("Black Alone" , field) == 0){
+        j = 2;
+    }
+    else if(strcmp("Hispanic or Latino" , field) == 0){
+        j = 3;
+    }
+    else if(strcmp("Native Hawaiian and Other Pacific Islander Alone" , field) == 0){
+        j = 4;
+    }
+    else if(strcmp("Two or More Races" , field) == 0){
+        j =5;
+    }
+    else if(strcmp("White Alone" , field) == 0){
+        j=6;
+    }
+    else if(strcmp("White Alone, not Hispanic or Latino" , field) == 0){
+        j = 7;
+    }
+    else if(strcmp("American Indian and Alaska Native Alone" , field) == 0){
+        j = 0;
+    }
+    else{
+        printf("field: %s" , field);
+        perror("not a valid field(education)" ); //need to say something about this not being valid
+        return -1;
+    }
+    float pop_total = 0;
+    for (int i = 0 ; i < (data -> size) ; i ++){
+        county cur = (data -> ptr)[i];
+        float perc = cur.ethn[j];
+        float pop = cur.pop * perc * .01;
+        pop_total += pop;
+    }    
+
+    //printf("2014 %s population: %f\n", field, pop_total);
+    return pop_total;
+}
+float findpop_pov(storage *data , char *field){
+    float pop_total = 0;
+    for (int i = 0 ; i < (data -> size) ; i ++){
+        county cur = (data -> ptr)[i];
+        float perc = cur.pov;
+        float pop = cur.pop * perc * .01;
+        pop_total += pop;
+    }
+    //printf("2014 %s population: %f\n", field, pop_total); 
+    return pop_total;   
+
+}
+
+void percentme(storage *data , char *line){
+    int totalpop; 
+    totalpop = poptotal(data);
+    float tot_type = popfield(data, line);
+    if (totalpop == -1){
+        printf("not a valid field\n");
+        return;
+    }
+    float fintot = (tot_type / totalpop) * 100;
+    char *field = findfield(line);
+    printf("2014 %s percentage: %f\n" , field , fintot);
+    free(field);
+}
 
 
 

@@ -40,6 +40,14 @@ void findgele_edu(storage *data , char *field , int sign , float value);
 void findgele_ethn(storage *data , char *field , int sign , float value);
 void findgele_inc(storage *data , char *field , int sign , float value);
 void addentry(storage *newheap , storage *data , int i );
+void populationme(storage *data , char *line);
+int poptotal(storage *data);
+float popfield(storage *data , char *line);
+float findpop_edu(storage *data , char *field);
+float findpop_eth(storage *data , char *field);
+float findpop_pov(storage *data , char *field);
+char *findfield(char *line);
+void percentme(storage *data , char *line);
 
 
 #endif
