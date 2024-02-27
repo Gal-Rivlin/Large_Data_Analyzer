@@ -4,11 +4,23 @@ int main(int argc , char *argv[])
 {
 //first step: parse the given csv
     FILE *csvfile = openingfile(argc , argv , 1);  
+    if (csvfile == NULL) {
+        perror("Error opening file");
+        exit(1);
+    }
     storage *info = makeheap();
     fillheap(info , csvfile);
 
 //second step: the the operations
     FILE *opfile = openingfile(argc , argv , 2);
+    if (opfile == NULL) {
+        perror("Error opening file");
+        free(info -> ptr);
+        free(info);
+        fclose(csvfile);
+        //fclose(opfile);
+        exit(1);
+    }
     readops(opfile , info);
   
 //close all my pointers
@@ -23,10 +35,6 @@ FILE *openingfile(int argc, char *argv[] , int i){
     FILE *file;
     if (argc == 3){
         file = fopen(argv[i], "r");
-        if (file == NULL) {
-            perror("Error opening file");
-            exit(0);
-        }
     }
     else{
         perror("Incorrect # of files given");
@@ -37,12 +45,14 @@ FILE *openingfile(int argc, char *argv[] , int i){
 
 //create a new empty storage container
 storage *makeheap(){
-    storage *newheap = (storage *)malloc(sizeof(newheap));
+    storage *newheap = (storage *)malloc(sizeof(storage));
     newheap->cap =  4000; //change it back later
     newheap->size = 0;
-    newheap->ptr = (county *)malloc(((newheap->cap) + 1) * sizeof(county));
+    newheap->ptr = (county *)calloc(((newheap->cap) + 1) , sizeof(county));
+    
     return newheap;
 }
+
 
 void fillheap(storage *info , FILE *file){
     char *line = NULL;
@@ -56,12 +66,29 @@ void fillheap(storage *info , FILE *file){
             printf(" could not parse county at line %d\n" , info -> size);
         }
         else{
+            if (info -> size == 152){
+                (info -> ptr)[info -> size] = newcounty;
+            }
         (info -> ptr)[info -> size] = newcounty;
         (info -> size)++;
         }
     }
     printf("%d records loaded\n" , info -> size);
 }
+
+/*
+void realloccheck(storage *info){
+    if ((info -> size) == (info -> cap)){
+        county *newptr = (county *)malloc((151 + (info -> cap)) * sizeof(county));
+        for (int i =0 ; i < (info -> size) ;  i++){
+            newptr[i] = (info -> ptr)[i];
+        }
+        (info -> cap) += 150;
+        free(info -> ptr);
+        (info -> ptr) = newptr;
+    }
+}
+*/
 
 void realloccheck(storage *info){
     if ((info -> size) + 1 == info -> cap){
@@ -75,6 +102,9 @@ void realloccheck(storage *info){
         }
     }
 }
+
+
+
 
 county parseline(char *line){
     county cnt;
@@ -173,10 +203,13 @@ county parseline(char *line){
         }
     }
     //printf("%d\n", tokenIndex);
+    
     if (tokenIndex != 52){
+        printf("whattttt\n");
         cnt.state[3] = 'Z';
         return cnt;   
     }
+    
 
     return cnt;
 }
