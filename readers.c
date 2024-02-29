@@ -46,7 +46,7 @@ FILE *openingfile(int argc, char *argv[] , int i){
 //create a new empty storage container
 storage *makeheap(){
     storage *newheap = (storage *)malloc(sizeof(storage));
-    newheap->cap =  4000; //change it back later
+    newheap->cap =  150; //change it back later
     newheap->size = 0;
     newheap->ptr = (county *)calloc(((newheap->cap) + 1) , sizeof(county));
     
@@ -58,7 +58,7 @@ void fillheap(storage *info , FILE *file){
     char *line = NULL;
     size_t size = 0;
     getline(&line , &size , file);
-    free(line);
+    //free(line);
     while(getline(&line , &size , file) > 0){
         realloccheck(info);
         county newcounty = parseline(line);
@@ -74,6 +74,7 @@ void fillheap(storage *info , FILE *file){
         }
     }
     printf("%d records loaded\n" , info -> size);
+    free(line);
 }
 
 /*
@@ -102,6 +103,7 @@ void realloccheck(storage *info){
         }
     }
 }
+
 
 
 
